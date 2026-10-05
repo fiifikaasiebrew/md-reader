@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: file:; font-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MD Reader</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="../node_modules/katex/dist/katex.min.css">
+</head>
+<body>
+<div id="progress"></div>
+<header id="topbar">
+  <button id="btn-toc" class="icon-btn" title="Toggle contents (Ctrl+\)">☰</button>
+  <span id="filename">MD Reader</span>
+  <span class="spacer"></span>
+  <button id="btn-notes" class="icon-btn" title="Review comments">💬 Review</button>
+  <button id="btn-read"class="icon-btn" title="Read aloud (from selection or current position; Esc stops)">🔊</button>
+  <button id="btn-focus" class="icon-btn" title="Focus mode: dim everything except what you hover">◎</button>
+  <button id="btn-ask"class="icon-btn" title="Ask Claude about the selection or whole document">✦ Ask Claude</button>
+  <button id="btn-edit" class="icon-btn" title="Edit (Ctrl+E)">✎ Edit</button>
+  <button id="btn-source" class="icon-btn" title="Source view (Ctrl+/)">&lt;/&gt;</button>
+  <button id="btn-find" class="icon-btn" title="Find (Ctrl+F)">Find</button>
+  <button id="btn-theme" class="icon-btn" title="Toggle dark mode (Ctrl+D)">◐</button>
+  <button id="btn-open" class="primary">Open file…</button>
+</header>
+<div id="tabs" hidden></div>
+<div id="changebar" hidden>
+  <span id="cb-text"></span>
+  <span class="spacer"></span>
+  <button id="cb-toggle" class="ghost">Show changes</button>
+  <button id="cb-dismiss" class="ghost">Dismiss</button>
+</div>
+
+<div id="find-bar" hidden>
+  <input id="find-input" type="text" placeholder="Find in document" spellcheck="false" autocomplete="off">
+  <span id="find-count">0/0</span>
+  <button id="find-case" class="icon-btn" title="Match case">Aa</button>
+  <button id="find-prev" class="icon-btn" title="Previous (Shift+Enter)">↑</button>
+  <button id="find-next" class="icon-btn" title="Next (Enter)">↓</button>
+  <button id="find-close" class="icon-btn" title="Close (Esc)">✕</button>
+</div>
+
+<div id="layout">
+  <nav id="toc">
+    <div class="toc-title">Contents</div>
+    <div id="toc-list"></div>
+  </nav>
+  <section id="editor-pane" hidden>
+    <div id="editbar">
+      <button data-fmt="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+      <button data-fmt="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+      <button data-fmt="strike" title="Strikethrough"><s>S</s></button>
+      <button data-fmt="h1" title="Heading 1">H1</button>
+      <button data-fmt="h2" title="Heading 2">H2</button>
+      <button data-fmt="h3" title="Heading 3">H3</button>
+      <button data-fmt="ul" title="Bullet list">•</button>
+      <button data-fmt="ol" title="Numbered list">1.</button>
+      <button data-fmt="task" title="Task list">☑</button>
+      <button data-fmt="quote" title="Quote">❝</button>
+      <button data-fmt="code" title="Inline code">&lt;&gt;</button>
+      <button data-fmt="codeblock" title="Code block">{ }</button>
+      <button data-fmt="link" title="Link (Ctrl+K)">🔗</button>
+      <button data-fmt="table" title="Insert table">▦</button>
+      <button data-fmt="hr" title="Horizontal rule">HR</button>
+      <span class="spacer"></span>
+      <button id="btn-save" class="primary" title="Save (Ctrl+S)">Save</button>
+    </div>
+    <textarea id="editor" spellcheck="false" wrap="soft"></textarea>
+  </section>
+  <main id="scroller">
+    <article id="doc" class="md"></article>
+  </main>
+  <aside id="notes-panel" hidden>
+    <div class="np-head">Review comments <button id="np-x" class="icon-btn">✕</button></div>
+    <div id="np-list"></div>
+    <div class="np-foot">
+      <button id="np-copy" class="ghost">Copy feedback</button>
+      <button id="np-go" class="primary">Copy &amp; open Claude</button>
+      <button id="np-clear" class="icon-btn">Clear all</button>
+    </div>
+  </aside>
+</div>
+<footer id="status"><span id="st-stats"></span><span class="spacer"></span><span id="st-path"></span></footer>
+<div id="toast" hidden></div>
+<button id="sel-chip" hidden>✦ Ask Claude</button>
+<button id="sel-note" hidden>💬 Comment</button>
+<div id="note-dlg" hidden>
+  <div class="ask-card">
+    <div class="ask-title">Add review comment <button id="nd-x" class="icon-btn">✕</button></div>
+    <pre id="nd-quote"></pre>
+    <textarea id="nd-text" placeholder="What should change here? e.g. “Make this more specific”" rows="3"></textarea>
+    <div class="ask-actions"><button id="nd-save" class="primary">Save comment</button></div>
+    <div class="ask-note">Ctrl+Enter to save. Comments stay on this PC and can be sent to Claude as one revision request.</div>
+  </div>
+</div>
+<div id="ask" hidden>
+  <div class="ask-card">
+    <div class="ask-title">Ask Claude <button id="ask-x" class="icon-btn">✕</button></div>
+    <div class="ask-chips">
+      <button class="chip" data-q="Summarize this clearly and concisely.">Summarize</button>
+      <button class="chip" data-q="Explain this in simple terms.">Explain</button>
+      <button class="chip" data-q="Find mistakes, gaps or inconsistencies in this.">Find issues</button>
+      <button class="chip" data-q="Rewrite this to be clearer and tighter.">Rewrite</button>
+      <button class="chip" data-q="Turn this into an actionable checklist.">Checklist</button>
+    </div>
+    <textarea id="ask-q" placeholder="What do you want to ask about this?" rows="3"></textarea>
+    <div id="ask-ctx-label"></div>
+    <pre id="ask-ctx"></pre>
+    <div class="ask-actions">
+      <button id="ask-copy" class="ghost">Copy only</button>
+      <button id="ask-go" class="primary">Copy &amp; open Claude</button>
+    </div>
+    <div class="ask-note">The prompt is copied to your clipboard. Claude opens in your browser. Press Ctrl+V to paste it.</div>
+  </div>
+</div>
+<div id="drop" hidden>Drop a Markdown file to open</div>
+<script src="app.js"></script>
+</body>
+</html>

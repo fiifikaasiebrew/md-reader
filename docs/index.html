@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MD Reader | A Markdown reader for AI-generated documents</title>
+<meta name="description" content="MD Reader is a Windows Markdown reader and editor built for the long, table-heavy documents AI tools write. Created by Fiifi Kaasie Brew.">
+<style>
+:root {
+  --bg: #faf9f5; --panel: #f3f1ea; --text: #1f1e1d; --muted: #6d6c66; --border: #e3e0d6;
+  --accent: #c96442; --accent-ink: #fff; --soft: rgba(201,100,66,.1);
+  --sans: -apple-system, "Segoe UI Variable", "Segoe UI", system-ui, Roboto, sans-serif;
+  --serif: "Iowan Old Style", Georgia, Cambria, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #262624; --panel: #1f1e1d; --text: #ece9e0; --muted: #a09e96; --border: #3d3c38; --accent: #e08a67; --accent-ink: #1f1e1d; --soft: rgba(224,138,103,.14); }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+.brand { font-weight: 700; letter-spacing: -.01em; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.logo { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+nav a.link { color: var(--muted); text-decoration: none; margin-left: 22px; font-size: 14px; }
+nav a.link:hover { color: var(--text); }
+.hero { padding: 64px 0 40px; text-align: center; }
+.eyebrow { display: inline-block; font-size: 13px; font-weight: 600; color: var(--accent); background: var(--soft); padding: 4px 14px; border-radius: 999px; }
+h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(2.2rem, 6vw, 3.8rem); line-height: 1.1; letter-spacing: -.02em; margin: 18px auto 16px; max-width: 16em; }
+.lead { color: var(--muted); font-size: clamp(1.02rem, 2.2vw, 1.2rem); max-width: 38em; margin: 0 auto 28px; }
+.cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn { display: inline-block; padding: 12px 24px; border-radius: 12px; font-weight: 650; text-decoration: none; font-size: 15px; border: 1px solid var(--border); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.ghost:hover { background: var(--panel); }
+.note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+.shot { margin: 40px auto 0; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,.14); }
+.shot img { display: block; width: 100%; height: auto; }
+section { padding: 72px 0 8px; }
+h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.7rem, 4vw, 2.3rem); letter-spacing: -.01em; margin: 0 0 8px; }
+.sub { color: var(--muted); margin: 0 0 32px; max-width: 40em; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+.card h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.card p { margin: 0; color: var(--muted); font-size: .95rem; }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+.feature { display: grid; grid-template-columns: 1fr 1.25fr; gap: 36px; align-items: center; margin: 56px 0; }
+.feature.flip { grid-template-columns: 1.25fr 1fr; }
+.feature.flip .text { order: 2; }
+.feature h3 { font-family: var(--serif); font-size: 1.7rem; font-weight: 600; margin: 0 0 10px; letter-spacing: -.01em; }
+.feature p { color: var(--muted); margin: 0 0 10px; }
+.feature ul { padding-left: 1.2em; color: var(--muted); margin: 0; }
+.feature .shot { margin: 0; }
+@media (max-width: 760px) { .feature, .feature.flip { grid-template-columns: 1fr; } .feature.flip .text { order: 0; } }
+.stack { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { padding: 5px 14px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; color: var(--muted); background: var(--panel); }
+.about { display: grid; grid-template-columns: 1fr; gap: 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+.about p { margin: 0; color: var(--muted); max-width: 44em; }
+.about strong { color: var(--text); }
+footer { padding: 56px 0 40px; color: var(--muted); font-size: 14px; text-align: center; }
+footer a { text-decoration: none; border-bottom: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="brand" href="#top"><span class="logo">M&darr;</span> MD Reader</a>
+    <div>
+      <a class="link" href="#features">Features</a>
+      <a class="link" href="#about">About</a>
+      <a class="link" id="nav-source" href="#">Source</a>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <span class="eyebrow">Windows &middot; Free &middot; Open source</span>
+    <h1>The Markdown reader for AI-generated documents</h1>
+    <p class="lead">Long reports, plans and tables rendered the way Claude shows them, with tools to review, compare and work with them. Read it, comment on it, hand it back.</p>
+    <div class="cta">
+      <a class="btn primary" id="dl" href="#">Download for Windows</a>
+      <a class="btn ghost" id="src" href="#">View on GitHub</a>
+    </div>
+    <p class="note">Windows 10 and 11. No admin rights needed. The installer is unsigned, so SmartScreen may ask you to click &ldquo;More info&rdquo; then &ldquo;Run anyway&rdquo;.</p>
+    <div class="shot"><img src="screenshots/reader.png" alt="MD Reader showing a report with a table of contents, a callout and a sortable table"></div>
+  </header>
+
+  <section id="features">
+    <h2>Built around how you actually use AI output</h2>
+    <p class="sub">Most Markdown apps are editors. MD Reader starts from reading, then adds the steps that come next.</p>
+
+    <div class="feature">
+      <div class="text">
+        <span class="tag">Review mode</span>
+        <h3>Comment on the text, send one clean prompt</h3>
+        <p>Select any passage and add a comment. When you are done, copy every comment as a single structured revision request, with the quote and section for each one.</p>
+        <ul><li>Highlights stay on the page</li><li>Comments are saved per file on your PC</li><li>One click copies and opens Claude</li></ul>
+      </div>
+      <div class="shot"><img src="screenshots/review.png" alt="Review comments panel next to a highlighted passage"></div>
+    </div>
+
+    <div class="feature flip">
+      <div class="text">
+        <span class="tag">What changed</span>
+        <h3>See exactly what a rewrite touched</h3>
+        <p>MD Reader remembers the last version you read. When the file changes, a bar shows what was added or removed, in green and red, so you never reread a whole document to find one edit.</p>
+        <ul><li>Works live while the file is open</li><li>Compares at the block level: paragraphs, tables, lists</li></ul>
+      </div>
+      <div class="shot"><img src="screenshots/changes.png" alt="Diff view with an added table block highlighted in green"></div>
+    </div>
+
+    <div class="grid" style="margin-top: 24px">
+      <div class="card"><span class="tag">Tables</span><h3>Sort, filter, export, chart</h3><p>Click a header to sort. Filter rows, copy for Excel, save as CSV, or turn a table into a chart in one click.</p></div>
+      <div class="card"><span class="tag">Tasks</span><h3>Checkboxes that write back</h3><p>Tick a task and the file updates. Each section shows its progress, ideal for plan files.</p></div>
+      <div class="card"><span class="tag">Claude</span><h3>Copy or ask, section by section</h3><p>Hover a heading to copy that section with its context, or send a section, table or selection to Claude.</p></div>
+      <div class="card"><span class="tag">Size</span><h3>Token estimate</h3><p>Know roughly how large a document is before you paste it into a conversation.</p></div>
+      <div class="card"><span class="tag">Reading</span><h3>Read aloud and focus mode</h3><p>Listen with the current block highlighted, or dim everything except what you hover.</p></div>
+      <div class="card"><span class="tag">Editor</span><h3>Live preview editing</h3><p>Edit with a formatting toolbar and a live preview, with tabs, export to PDF and HTML, and recent files.</p></div>
+    </div>
+
+    <div class="feature" style="margin-bottom: 0">
+      <div class="text">
+        <span class="tag">Editor</span>
+        <h3>Edit side by side</h3>
+        <p>Toggle the editor for a split view with a live preview that follows your scrolling. Lists continue as you type, and shortcuts cover bold, italic and links.</p>
+      </div>
+      <div class="shot"><img src="screenshots/editor.png" alt="Split view with Markdown source on the left and the rendered preview on the right"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it is built</h2>
+    <p class="sub">A desktop app with no server and no account. Your files never leave your computer unless you choose to copy something into Claude.</p>
+    <div class="stack">
+      <span class="pill">Electron</span><span class="pill">JavaScript</span><span class="pill">marked</span><span class="pill">highlight.js</span><span class="pill">KaTeX</span><span class="pill">NSIS installer</span>
+    </div>
+  </section>
+
+  <section id="about">
+    <h2>About the author</h2>
+    <div class="about">
+      <p><strong>Fiifi Kaasie Brew</strong> designed and built MD Reader to make working with AI-written documents faster: reading them properly, reviewing them, and handing feedback back in one step.</p>
+      <p>More projects are on the way.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>&copy; 2026 Fiifi Kaasie Brew &middot; Released under the <a id="lic" href="#">MIT License</a></p>
+  </footer>
+</div>
+
+<script>
+// Works on GitHub Pages: https://<owner>.github.io/<repo>/
+(function () {
+  var host = location.hostname, parts = host.split('.');
+  var path = location.pathname.split('/').filter(Boolean);
+  if (parts.length >= 3 && parts[1] === 'github' && parts[2] === 'io') {
+    var owner = parts[0], repo = path[0] || (owner + '.github.io');
+    var base = 'https://github.com/' + owner + '/' + repo;
+    document.getElementById('dl').href = base + '/releases/latest';
+    document.getElementById('src').href = base;
+    document.getElementById('nav-source').href = base;
+    document.getElementById('lic').href = base + '/blob/main/LICENSE';
+  }
+})();
+</script>
+</body>
+</html>

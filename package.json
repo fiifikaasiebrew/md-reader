@@ -1,0 +1,59 @@
+{
+  "name": "md-reader",
+  "productName": "MD Reader",
+  "version": "1.3.0",
+  "license": "MIT",  "description": "Markdown reader with table of contents and find",
+  "main": "src/main.js",
+  "author": "Fiifi Kaasie Brew <fiifikaasiebrew@gmail.com>",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "dependencies": {
+    "highlight.js": "^11.10.0",
+    "katex": "^0.18.10",
+    "marked": "^14.1.4",
+    "marked-highlight": "^2.2.1",
+    "marked-katex-extension": "^5.1.13"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.kofik.mdreader",
+    "copyright": "Copyright © 2026 Fiifi Kaasie Brew",
+    "productName": "MD Reader",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png",
+      "artifactName": "MD-Reader-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "fileAssociations": [
+      {
+        "ext": [
+          "md",
+          "markdown"
+        ],
+        "name": "Markdown Document",
+        "description": "Markdown Document",
+        "role": "Viewer"
+      }
+    ]
+  }
+}
+
