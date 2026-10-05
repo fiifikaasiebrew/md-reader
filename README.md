@@ -52,7 +52,7 @@ A Markdown reader and editor for Windows, built for the documents AI tools write
 Requires [Node.js](https://nodejs.org) 20 or newer.
 
 ```bash
-git clone https://github.com/OWNER/md-reader.git
+git clone https://github.com/fiifikaasiebrew/md-reader.git
 cd md-reader
 npm install
 npm start          # run the app
