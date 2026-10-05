@@ -210,6 +210,11 @@ body.wide #doc { max-width: 1100px; }
 .h-tools button:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
 
 /* what-changed */
+.chat-sel { border: 1px solid var(--border); background: var(--panel); color: var(--text); border-radius: 8px; padding: 5px 8px; font: 12.5px var(--sans); }
+#clipbar { display: flex; align-items: center; gap: 8px; padding: 7px 14px; background: rgba(64,120,242,.12); border-bottom: 1px solid var(--border); font-size: 13px; flex: none; }
+#clipbar[hidden] { display: none; }
+#clipbar .primary, #clipbar .ghost { padding: 3px 12px; font-size: 12.5px; }
+.ask-actions .chat-sel { margin-right: auto; }
 #changebar { display: flex; align-items: center; gap: 8px; padding: 7px 14px; background: var(--accent-soft); border-bottom: 1px solid var(--border); font-size: 13px; flex: none; }
 #changebar[hidden] { display: none; }
 #changebar .ghost { padding: 3px 12px; font-size: 12.5px; }

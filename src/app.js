@@ -163,7 +163,8 @@ function showEmpty() {
   const row = document.createElement('p');
   const b1 = document.createElement('button'); b1.className = 'primary'; b1.textContent = 'Open file…'; b1.onclick = () => window.api.openDialog();
   const b2 = document.createElement('button'); b2.className = 'ghost'; b2.textContent = 'New file'; b2.onclick = newTab;
-  row.append(b1, ' ', b2);
+  const b3 = document.createElement('button'); b3.className = 'ghost'; b3.textContent = 'Paste from clipboard'; b3.onclick = () => openFromClipboard();
+  row.append(b1, ' ', b2, ' ', b3);
   box.append(h, p, row);
   if (recent.length) {
     const rh = document.createElement('div'); rh.className = 'recent-h'; rh.textContent = 'Recent';
@@ -674,7 +675,7 @@ function decorateTables(root) {
     tools.className = 'table-tools';
     tools.innerHTML = '<input class="tt-filter" placeholder="Filter rows…" spellcheck="false"><span class="tt-count"></span><span class="spacer"></span>' +
       '<button data-act="copy" title="Copy for Excel / Sheets">Copy</button><button data-act="csv" title="Save as CSV">CSV</button>' +
-      '<button data-act="chart" title="Chart this table">Chart</button><button data-act="ask" title="Ask Claude about this table">✦ Ask</button>';
+      '<button data-act="chart" title="Chart this table">Chart</button><button data-act="ask" title="Ask an AI chat about this table">✦ Ask</button>';
     const wrap = document.createElement('div');
     wrap.className = 'table-wrap';
     const chart = document.createElement('div');
@@ -801,7 +802,7 @@ function decorateHeadings(root) {
   root.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach((h) => {
     const tools = document.createElement('span');
     tools.className = 'h-tools';
-    tools.innerHTML = '<button data-act="copy" title="Copy this section for Claude">⧉ Copy</button><button data-act="ask" title="Ask Claude about this section">✦ Ask</button>';
+    tools.innerHTML = '<button data-act="copy" title="Copy this section for any AI chat">⧉ Copy</button><button data-act="ask" title="Ask an AI chat about this section">✦ Ask</button>';
     h.appendChild(tools);
   });
 }
@@ -848,11 +849,31 @@ doc.addEventListener('click', (e) => {
   e.preventDefault();
   const sec = sectionOf(b.closest('h1,h2,h3,h4,h5,h6'));
   if (b.dataset.act === 'copy') {
-    copyText(`From "${cur().name}" › ${sec.path}\n\n${sec.md}`).then(() => toast('Section copied. Ready to paste into Claude.'));
+    copyText(`From "${cur().name}" › ${sec.path}\n\n${sec.md}`).then(() => toast('Section copied. Ready to paste into any AI chat.'));
   } else openAsk({ label: `section "${sec.path}"`, md: sec.md });
 });
 
-/* ---------- Ask Claude ---------- */
+/* ---------- AI chat picker (works with any chat) ---------- */
+const CHATS = [['claude', 'Claude'], ['chatgpt', 'ChatGPT'], ['gemini', 'Gemini'], ['copilot', 'Copilot'], ['perplexity', 'Perplexity']];
+let chatId = lsGet('chat') || 'claude';
+if (!CHATS.some(([id]) => id === chatId)) chatId = 'claude';
+const chatName = () => (CHATS.find(([id]) => id === chatId) || CHATS[0])[1];
+function updateChatUI() {
+  document.querySelectorAll('.chat-sel').forEach((sel) => {
+    if (!sel.options.length) CHATS.forEach(([id, name]) => sel.add(new Option(name, id)));
+    sel.value = chatId;
+  });
+  $('#ask-go').textContent = `Copy & open ${chatName()}`;
+  $('#np-go').textContent = `Copy & open ${chatName()}`;
+}
+document.querySelectorAll('.chat-sel').forEach((sel) => sel.addEventListener('change', () => { chatId = sel.value; lsSet('chat', chatId); updateChatUI(); }));
+updateChatUI();
+function openChatWithToast() {
+  window.api.openChat(chatId);
+  toast(`Copied. Paste into ${chatName()} with Ctrl+V.`);
+}
+
+/* ---------- Ask AI ---------- */
 let askCtx = null;
 function openAsk({ label, md }) {
   askCtx = { label, md };
@@ -872,8 +893,7 @@ document.querySelectorAll('.chip').forEach((c) => (c.onclick = () => { $('#ask-q
 $('#ask-copy').onclick = () => copyText(askPrompt()).then(() => { $('#ask').hidden = true; toast('Copied to clipboard'); });
 $('#ask-go').onclick = () => copyText(askPrompt()).then(() => {
   $('#ask').hidden = true;
-  window.api.openClaude();
-  toast('Copied. Paste into Claude with Ctrl+V.');
+  openChatWithToast();
 });
 $('#ask-q').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('#ask-go').click(); else if (e.key === 'Escape') $('#ask').hidden = true; });
 
@@ -1044,7 +1064,7 @@ function renderNotesPanel() {
   if (!notes.length) {
     const d = document.createElement('div');
     d.className = 'np-empty';
-    d.textContent = 'Select any text in the document and click “💬 Comment”. When you are done, copy all comments as one revision request for Claude.';
+    d.textContent = 'Select any text in the document and click “💬 Comment”. When you are done, copy all comments as one revision request for any AI chat.';
     list.appendChild(d);
     return;
   }
@@ -1099,14 +1119,33 @@ $('#nd-x').onclick = () => ($('#note-dlg').hidden = true);
 $('#nd-text').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveNote(); else if (e.key === 'Escape') $('#note-dlg').hidden = true; });
 $('#btn-notes').onclick = () => ($('#notes-panel').hidden = !$('#notes-panel').hidden);
 $('#np-x').onclick = () => ($('#notes-panel').hidden = true);
-$('#np-copy').onclick = () => { if (!notes.length) return toast('No comments yet'); copyText(feedbackPrompt()).then(() => toast('Feedback copied. Paste it into Claude.')); };
-$('#np-go').onclick = () => { if (!notes.length) return toast('No comments yet'); copyText(feedbackPrompt()).then(() => { window.api.openClaude(); toast('Copied. Paste into Claude with Ctrl+V.'); }); };
+$('#np-copy').onclick = () => { if (!notes.length) return toast('No comments yet'); copyText(feedbackPrompt()).then(() => toast('Feedback copied. Paste it into any AI chat.')); };
+$('#np-go').onclick = () => { if (!notes.length) return toast('No comments yet'); copyText(feedbackPrompt()).then(openChatWithToast); };
 $('#np-clear').onclick = () => { if (notes.length && confirm('Delete all review comments for this document?')) { notes = []; saveNotes(); showPreview(true); } };
 doc.addEventListener('click', (e) => {
   const m = e.target.closest('mark.note');
   if (!m) return;
   $('#notes-panel').hidden = false;
 });
+
+/* ---------- clipboard: detect Markdown copied from any chat ---------- */
+let clipText = null;
+function openClipText(text) {
+  if (!text || !text.trim()) { toast('The clipboard is empty'); return; }
+  const first = (text.match(/^#{1,6}\s+(.+)$/m) || [])[1];
+  const safe = first ? first.replace(/[\\/:*?"<>|#`*_]/g, '').trim().slice(0, 40) : '';
+  addTab({ path: null, name: (safe || 'Pasted Markdown') + '.md', text, scroll: 0, dirty: true });
+}
+window.api.onClipDetected(({ text, words }) => {
+  clipText = text;
+  $('#clip-text').textContent = `Markdown detected on your clipboard (${words.toLocaleString()} words).`;
+  $('#clipbar').hidden = false;
+});
+$('#clip-open').onclick = () => { openClipText(clipText); $('#clipbar').hidden = true; clipText = null; };
+$('#clip-dismiss').onclick = () => { $('#clipbar').hidden = true; clipText = null; };
+$('#clip-off').onclick = () => { window.api.disableClipDetect(); $('#clipbar').hidden = true; clipText = null; toast('Clipboard detection turned off. Re-enable it under File.'); };
+const openFromClipboard = () => window.api.readClipboard().then(openClipText);
+window.api.onOpenClip(openFromClipboard);
 
 /* ---------- focus mode ---------- */
 $('#btn-focus').onclick = () => {

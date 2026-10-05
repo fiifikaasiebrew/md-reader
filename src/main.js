@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, shell } = require('electron');
+const { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, Notification, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -13,6 +13,69 @@ const readText = (f) => fs.readFileSync(f, 'utf8').replace(/^﻿/, '');
 function send(channel, payload) {
   if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
 }
+
+/* ---------- AI chats (allowlist: the renderer only sends an id) ---------- */
+const CHATS = {
+  claude: 'https://claude.ai/new',
+  chatgpt: 'https://chatgpt.com/',
+  gemini: 'https://gemini.google.com/app',
+  copilot: 'https://copilot.microsoft.com/',
+  perplexity: 'https://www.perplexity.ai/',
+};
+
+/* ---------- settings ---------- */
+const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
+function getSettings() {
+  try { return { detectClipboard: true, ...JSON.parse(fs.readFileSync(settingsFile(), 'utf8')) }; } catch { return { detectClipboard: true }; }
+}
+function setSetting(k, v) {
+  try { fs.writeFileSync(settingsFile(), JSON.stringify({ ...getSettings(), [k]: v })); } catch {}
+}
+
+/* ---------- clipboard detection ---------- */
+// Heuristic: does this text look like Markdown copied from an AI chat?
+function looksLikeMarkdown(t) {
+  if (!t || t.length < 120 || t.length > 2e6) return false;
+  const count = (re) => (t.match(re) || []).length;
+  let score = 0;
+  if (/^#{1,6}\s+\S/m.test(t)) score++;
+  if (/^\s*\|.+\|\s*\r?\n\s*\|[\s:|-]+\|/m.test(t)) score += 2;
+  if (/^```/m.test(t)) score++;
+  if (count(/^\s*[-*+]\s+\S/gm) >= 2) score++;
+  if (count(/^\s*\d+[.)]\s+\S/gm) >= 2) score++;
+  if (/\*\*[^*\n]+\*\*/.test(t)) score++;
+  if (/\[[^\]\n]+\]\([^)\s]+\)/.test(t)) score++;
+  if (/^>\s+\S/m.test(t)) score++;
+  return score >= 2;
+}
+
+let lastClip = '';
+let pendingClip = null;
+let clipTimer = null;
+function announceClip() {
+  if (pendingClip && win && !win.isDestroyed()) {
+    send('clip:detected', { text: pendingClip, words: (pendingClip.match(/\S+/g) || []).length });
+    pendingClip = null;
+  }
+}
+function startClipboardWatch() {
+  stopClipboardWatch();
+  try { lastClip = clipboard.readText(); } catch { lastClip = ''; }
+  clipTimer = setInterval(() => {
+    let t = '';
+    try { t = clipboard.readText(); } catch { return; }
+    if (!t || t === lastClip) return;
+    lastClip = t;
+    if (!win || win.isDestroyed() || win.isFocused() || !looksLikeMarkdown(t)) return; // our own copies are ignored
+    pendingClip = t;
+    if (Notification.isSupported()) {
+      const n = new Notification({ title: 'Markdown copied', body: 'Click to open it in MD Reader.', silent: true });
+      n.on('click', () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
+      n.show();
+    }
+  }, 1200);
+}
+function stopClipboardWatch() { if (clipTimer) clearInterval(clipTimer); clipTimer = null; pendingClip = null; }
 
 /* ---------- recent files ---------- */
 const recentFile = () => path.join(app.getPath('userData'), 'recent.json');
@@ -125,6 +188,7 @@ function createWindow() {
     send('recent:list', getRecent());
     if (pendingFile) { openFile(pendingFile); pendingFile = null; }
   });
+  win.on('focus', () => setTimeout(announceClip, 150));
   win.on('close', (e) => {
     if (!dirty) return;
     const choice = dialog.showMessageBoxSync(win, {
@@ -154,6 +218,9 @@ function buildMenu() {
       { label: 'Open…', accelerator: 'CmdOrCtrl+O', click: pickFile },
       { label: 'Save', accelerator: 'CmdOrCtrl+S', click: () => send('ui:save', false) },
       { label: 'Save As…', accelerator: 'CmdOrCtrl+Shift+S', click: () => send('ui:save', true) },
+      { label: 'Open from Clipboard', accelerator: 'CmdOrCtrl+Shift+V', click: () => send('ui:open-clip') },
+      { label: 'Detect Markdown on Clipboard', type: 'checkbox', checked: getSettings().detectClipboard,
+        click: (item) => { setSetting('detectClipboard', item.checked); item.checked ? startClipboardWatch() : stopClipboardWatch(); } },
       { label: 'Open Recent', submenu: recent.length
         ? [...recent.map((f) => ({ label: f, click: () => openFile(f) })), { type: 'separator' }, { label: 'Clear Recent', click: clearRecent }]
         : [{ label: 'No recent files', enabled: false }] },
@@ -197,8 +264,10 @@ if (!gotLock) {
   app.on('open-file', (e, p) => { e.preventDefault(); if (win) openFile(p); else pendingFile = p; });
   app.whenReady().then(() => {
     pendingFile = fileFromArgs(process.argv);
+    app.setAppUserModelId('com.kofik.mdreader');
     buildMenu();
     createWindow();
+    if (getSettings().detectClipboard) startClipboardWatch();
     ipcMain.handle('dialog:open', pickFile);
     ipcMain.handle('file:open-path', (_e, p) => { if (isMd(p) && fs.existsSync(p)) openFile(p); });
     ipcMain.handle('file:unwatch', (_e, p) => unwatch(p));
@@ -211,7 +280,9 @@ if (!gotLock) {
       try { fs.writeFileSync(r.filePath, '﻿' + text, 'utf8'); shell.showItemInFolder(r.filePath); return true; }
       catch (e) { dialog.showErrorBox('Export failed', String(e.message)); return false; }
     });
-    ipcMain.handle('open:claude', () => shell.openExternal('https://claude.ai/new'));
+    ipcMain.handle('open:chat', (_e, id) => shell.openExternal(CHATS[id] || CHATS.claude));
+    ipcMain.handle('clip:read', () => { try { return clipboard.readText(); } catch { return ''; } });
+    ipcMain.handle('clip:disable', () => { setSetting('detectClipboard', false); stopClipboardWatch(); buildMenu(); });
     ipcMain.handle('export:pdf', (_e, name) => exportPdf(name));
     ipcMain.handle('export:html', (_e, payload) => exportHtml(payload));
   });

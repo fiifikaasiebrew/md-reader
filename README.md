@@ -16,7 +16,8 @@ A Markdown reader and editor for Windows, built for the documents AI tools write
 | **What changed** | When a file is rewritten, a bar shows what changed since you last read it. Added blocks are green, removed blocks are struck through in red. |
 | **Live task lists** | Tick a `- [ ]` box and it writes back to the file. Each section shows its progress, such as 2/4. |
 | **Table tools** | Sort by clicking a header, filter rows, copy for Excel, save as CSV, or chart the table in one click. |
-| **Work with Claude** | Copy any section with its context, or ask Claude about a section, table or selection. |
+| **Works with any AI chat** | Copy any section with its context, or send a section, table, selection or your review comments to Claude, ChatGPT, Gemini, Copilot or Perplexity. Pick your chat once and it is remembered. |
+| **Clipboard detection** | Copy Markdown from any chat or website and MD Reader notices. A notification offers to open it as a rendered tab. Turn it off any time under File. |
 | **Token estimate** | See roughly how many tokens a document is before you paste it anywhere. |
 | **Read aloud and focus mode** | Listen to a document with the current block highlighted, or dim everything except what you hover. |
 

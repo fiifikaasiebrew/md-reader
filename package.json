@@ -1,8 +1,9 @@
 {
   "name": "md-reader",
   "productName": "MD Reader",
-  "version": "1.3.0",
-  "license": "MIT",  "description": "Markdown reader with table of contents and find",
+  "version": "1.4.0",
+  "license": "MIT",
+  "description": "Markdown reader with table of contents and find",
   "main": "src/main.js",
   "author": "Fiifi Kaasie Brew <fiifikaasiebrew@gmail.com>",
   "scripts": {

@@ -17,7 +17,7 @@
   <button id="btn-notes" class="icon-btn" title="Review comments">💬 Review</button>
   <button id="btn-read"class="icon-btn" title="Read aloud (from selection or current position; Esc stops)">🔊</button>
   <button id="btn-focus" class="icon-btn" title="Focus mode: dim everything except what you hover">◎</button>
-  <button id="btn-ask"class="icon-btn" title="Ask Claude about the selection or whole document">✦ Ask Claude</button>
+  <button id="btn-ask"class="icon-btn" title="Ask an AI chat about the selection or whole document">✦ Ask AI</button>
   <button id="btn-edit" class="icon-btn" title="Edit (Ctrl+E)">✎ Edit</button>
   <button id="btn-source" class="icon-btn" title="Source view (Ctrl+/)">&lt;/&gt;</button>
   <button id="btn-find" class="icon-btn" title="Find (Ctrl+F)">Find</button>
@@ -25,7 +25,14 @@
   <button id="btn-open" class="primary">Open file…</button>
 </header>
 <div id="tabs" hidden></div>
-<div id="changebar" hidden>
+<div id="clipbar" class="infobar" hidden>
+  <span id="clip-text"></span>
+  <span class="spacer"></span>
+  <button id="clip-open" class="primary">Open</button>
+  <button id="clip-dismiss" class="ghost">Dismiss</button>
+  <button id="clip-off" class="ghost" title="Stop watching the clipboard">Turn off detection</button>
+</div>
+<div id="changebar" class="infobar" hidden>
   <span id="cb-text"></span>
   <span class="spacer"></span>
   <button id="cb-toggle" class="ghost">Show changes</button>
@@ -75,15 +82,16 @@
     <div class="np-head">Review comments <button id="np-x" class="icon-btn">✕</button></div>
     <div id="np-list"></div>
     <div class="np-foot">
+      <select class="chat-sel" title="Which AI chat to open"></select>
       <button id="np-copy" class="ghost">Copy feedback</button>
-      <button id="np-go" class="primary">Copy &amp; open Claude</button>
+      <button id="np-go" class="primary">Copy &amp; open</button>
       <button id="np-clear" class="icon-btn">Clear all</button>
     </div>
   </aside>
 </div>
 <footer id="status"><span id="st-stats"></span><span class="spacer"></span><span id="st-path"></span></footer>
 <div id="toast" hidden></div>
-<button id="sel-chip" hidden>✦ Ask Claude</button>
+<button id="sel-chip" hidden>✦ Ask AI</button>
 <button id="sel-note" hidden>💬 Comment</button>
 <div id="note-dlg" hidden>
   <div class="ask-card">
@@ -96,7 +104,7 @@
 </div>
 <div id="ask" hidden>
   <div class="ask-card">
-    <div class="ask-title">Ask Claude <button id="ask-x" class="icon-btn">✕</button></div>
+    <div class="ask-title">Ask AI <button id="ask-x" class="icon-btn">✕</button></div>
     <div class="ask-chips">
       <button class="chip" data-q="Summarize this clearly and concisely.">Summarize</button>
       <button class="chip" data-q="Explain this in simple terms.">Explain</button>
@@ -108,10 +116,11 @@
     <div id="ask-ctx-label"></div>
     <pre id="ask-ctx"></pre>
     <div class="ask-actions">
+      <select class="chat-sel" title="Which AI chat to open"></select>
       <button id="ask-copy" class="ghost">Copy only</button>
-      <button id="ask-go" class="primary">Copy &amp; open Claude</button>
+      <button id="ask-go" class="primary">Copy &amp; open</button>
     </div>
-    <div class="ask-note">The prompt is copied to your clipboard. Claude opens in your browser. Press Ctrl+V to paste it.</div>
+    <div class="ask-note">The prompt is copied to your clipboard and your chosen chat opens in the browser. Press Ctrl+V to paste it. Works with any AI chat.</div>
   </div>
 </div>
 <div id="drop" hidden>Drop a Markdown file to open</div>
